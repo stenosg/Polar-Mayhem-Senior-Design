@@ -1,0 +1,30 @@
+#ifndef _GAME_MANAGER_H_
+#define _GAME_MANAGER_H_
+#include "unit.h"
+#include "map.h"
+#include "player.h"
+#include <OIS/OIS.h>
+#include <OGRE/OGRE.h>
+
+class GameManager, public OIS::KeyListener
+{
+ private:
+   Map map; 
+   enum Game_State{WORLD,BATTLE}gameState;
+   Player *playerOne;
+   Player *playerTwo;
+   Player *whoseTurn;
+   OIS::KeyCode leftKey;
+   OIS::KeyCode rightKey;
+   OIS::KeyCode upKey;
+   OIS::KeyCode downKey;
+ public:
+  GameManager(); 
+  void update(Ogre::SceneManager *sm,Ogre::Real time);
+  bool keyReleased( const OIS::KeyEvent& evt );
+  bool keyReleased( const OIS::KeyEvent& evt );
+
+
+};
+
+#endif

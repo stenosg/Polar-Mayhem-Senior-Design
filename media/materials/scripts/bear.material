@@ -1,0 +1,146 @@
+material Material.001/SOLID/TEX/COSMIC
+{
+	technique
+	{
+		pass
+		{
+			diffuse 0.800000 0.800000 0.800000
+			specular 0.500000 0.500000 0.500000 12.500000
+			texture_unit
+			{
+				texture COSMIC
+			}
+		}
+	}
+}
+material Material.003/SOLID/TEX/COSMIC
+{
+	technique
+	{
+		pass
+		{
+			diffuse 0.800000 0.800000 0.800000
+			specular 0.500000 0.500000 0.500000 12.500000
+			texture_unit
+			{
+				texture COSMIC
+			}
+		}
+	}
+}
+material Material.001/SOLID/TEX/Polar-Bear-standing.jpg
+{
+	technique
+	{
+		pass
+		{
+			diffuse 0.800000 0.800000 0.800000
+			specular 0.500000 0.500000 0.500000 12.500000
+			texture_unit
+			{
+				texture Polar-Bear-standing.jpg
+			}
+		}
+	}
+}
+material Bear/SOLID/TEX/communist_bear_by_djsic-d301ve0.jpg
+{
+	technique
+	{
+		pass
+		{
+			specular 0.486239 0.023024 0.023024 12.500000
+			texture_unit
+			{
+				texture communist_bear_by_djsic-d301ve0.jpg
+			}
+		}
+	}
+}
+material hilt/SOLID/TEX/COSMIC
+{
+	technique
+	{
+		pass
+		{
+			diffuse 0.800000 0.800000 0.800000
+			specular 0.500000 0.500000 0.500000 12.500000
+			texture_unit
+			{
+				texture COSMIC
+			}
+		}
+	}
+}
+material Material.002/SOLID/TEX/Polar-Bear-standing.jpg
+{
+	technique
+	{
+		pass
+		{
+			specular 0.000000 0.000000 0.000000 12.500000
+			texture_unit
+			{
+				texture Polar-Bear-standing.jpg
+			}
+		}
+	}
+}
+material Material.003/SOLID/TEX/Polar-Bear-standing.jpg
+{
+	technique
+	{
+		pass
+		{
+			diffuse 0.800000 0.800000 0.800000
+			specular 0.500000 0.500000 0.500000 12.500000
+			texture_unit
+			{
+				texture Polar-Bear-standing.jpg
+			}
+		}
+	}
+}
+material Bear/SOLID/TEX/Polar-Bear-standing.jpg
+{
+	technique
+	{
+		pass
+		{
+			specular 0.486239 0.023024 0.023024 12.500000
+			texture_unit
+			{
+				texture Polar-Bear-standing.jpg
+			}
+		}
+	}
+}
+material hilt/SOLID/TEX/Sickle1.jpg
+{
+	technique
+	{
+		pass
+		{
+			diffuse 0.800000 0.800000 0.800000
+			specular 0.500000 0.500000 0.500000 12.500000
+			texture_unit
+			{
+				texture Sickle1.jpg
+			}
+		}
+	}
+}
+material Material.002/SOLID/TEX/COSMIC
+{
+	technique
+	{
+		pass
+		{
+			specular 0.000000 0.000000 0.000000 12.500000
+			texture_unit
+			{
+				texture COSMIC
+			}
+		}
+	}
+}

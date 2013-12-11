@@ -1,0 +1,20 @@
+#include "OGRE/Ogre.h"
+
+class CharacterClass {
+ public:
+  CharacterClass();
+
+ private:
+  int HPM;
+  int HPC;
+  int MPM;
+  int MPC;
+  int SpM;
+  int SpC;
+  int PAM;
+  int PAC;
+  int MAM;
+  int MAC;
+
+
+};

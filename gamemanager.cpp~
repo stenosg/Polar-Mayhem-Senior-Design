@@ -1,0 +1,99 @@
+#include "gamemanager.h"
+
+
+GameManager::GameManager()left(OIS::KC_A),right(OIS::KC_D),up(OIS::KC_W),down(OIS::KC_S)
+{
+	//create players
+
+
+	whoseTurn = playerOne;
+}
+
+void GameManager::update(Ogre::SceneManager *sm,Ogre::Real time)
+{
+	map.update(sm,time);
+}
+
+
+bool GameManager::keyPressed(const OIS::KeyEvent& evt)
+{
+	
+	switch(evt.key)
+	{
+		
+
+		case upKey:
+		  y+=1;
+		  if(y >= mapY)
+		  {
+			y = mapY-1;
+		  }
+		  break;
+		case downKey:
+		  y-=1;
+		  if(y < 0)
+		  {
+		  	y = 0;
+		  }
+		  break;	
+		case leftKey:
+		  x-=1;
+		  if(x < 0)
+		  {
+		  	x = 0;
+		  }
+		  break;
+		case rightKey:
+		  x+=1;
+		  if(x >= mapX)
+		  {
+		  	x = mapX-1;
+		  }
+		  break;
+		case OIS::KC_RETURN:
+		  std::cout<<"Move "<<x<<" "<<y<<std::endl;
+		  map->moveTile(mSceneMgr);
+		  break;
+		case OIS::KC_SPACE:
+		  map->selectUnit(x,y);
+		  break;
+		case OIS::KC_E:
+		  map->attackUnit(x,y);
+		  break;
+		case OIS::KC_1:
+		  map->getSelectedUnit()->setDirection(Ogre::Vector3(0,0,1));
+		  break;
+		case OIS::KC_2:
+		  map->getSelectedUnit()->setDirection(Ogre::Vector3(1,0,0));
+
+		  break;
+		case OIS::KC_3:
+		  map->getSelectedUnit()->setDirection(Ogre::Vector3(0,0,-1));
+
+		  break;
+		case OIS::KC_4:
+		  map->getSelectedUnit()->setDirection(Ogre::Vector3(-1,0,0));
+
+		  break;
+		case OIS::KC_F3:
+		for(int i=0 ; i < mapX; i++)
+		{
+			ninjas[i]->reset();
+			robots[i]->reset();
+		}
+
+		break;
+	}
+	map->selectTile(x,y);
+
+
+	return true;
+}
+bool GameManager::keyReleased( const OIS::KeyEvent& evt )
+{
+	switch(evt.key)
+	{
+		
+	}
+	return true;
+}

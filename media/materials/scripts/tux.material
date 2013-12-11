@@ -1,0 +1,15 @@
+material tux/SOLID/TEX/tux.png
+{
+	technique
+	{
+		pass
+		{
+			diffuse 1.000000 1.000000 0.937585
+			specular 0.162957 0.175440 0.206648 12.500000
+			texture_unit
+			{
+				texture tux.png
+			}
+		}
+	}
+}

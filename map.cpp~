@@ -1,0 +1,406 @@
+#include "map.h"
+#include <cmath>
+#include <map>
+#include <vector>
+#include <list>
+
+Map::Map(Ogre::SceneManager *s,std::string mesh,std::string mat,int maxX,int maxY,int tileW,int tileH)
+:maxX(maxX),maxY(maxY),tileW(tileW),tileH(tileH)
+{
+  Ogre::Plane plane(Ogre::Vector3::UNIT_Y, 0);
+
+  // Ogre::MeshManager::getSingleton().createPlane(mesh,
+  //       Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, plane,
+  //       tileW*maxX,tileH*maxY,maxX,maxY,true,1,5,5,Ogre::Vector3::UNIT_Z);
+  currPath = NULL;
+  currAnim = NULL;
+  currUnit = NULL;
+  currTile = NULL;
+  animTime = 0;
+  tiles = new Tiles*[maxX];
+  for(int i=0; i < maxX; i++)
+  {
+    tiles[i] = new Tiles[maxY];
+  }
+  for(int x=0; x < maxX; x++)
+  {
+    for(int y=0; y < maxY; y++)
+    {
+     std::string str = "map";
+     str+=x;
+     str+=y;
+     tiles[x][y].initTile(s,str,mesh,mat, Ogre::Vector3(x*tileW,0,-y*tileH),x,y);
+   }
+ }
+}
+Ogre::Vector3 Map::mapToWorld(int x, int y)
+{//+(0.5f*tileW)+(0.5f*tileH)
+  return Ogre::Vector3((x*tileW),0,-((y*tileH)));
+}
+bool Map::addUnit(Unit *u,int x,int y)
+{
+  if(!tiles[x][y].hasUnit())
+  {
+    u->getSceneNode()->setPosition(mapToWorld(x,y));
+    u->setX(x);
+    u->setY(y);
+    tiles[x][y].u = u;
+    return true;
+  }
+  else return false;
+}
+Map::~Map()
+{
+  for (int i = 0; i < maxX; ++i)delete [] tiles[i];
+    delete [] tiles;
+}
+bool Map::selectTile(int x,int y)
+{
+  if(x >= 0 && x < maxX && y>= 0 && y < maxY)
+  {
+      //std::cerr<<"Chose "<<x<<" "<<y<<std::endl;
+    if(currTile)currTile->getSceneNode()->showBoundingBox(false);
+    currTile = &tiles[x][y];
+    currTile->getSceneNode()->showBoundingBox(true);
+    return true;
+  }
+  return false;
+}
+bool Map::moveTile(Ogre::SceneManager *sm)
+{
+  moveUnit(sm,currUnit,currTile->getX(),currTile->getY());
+}
+bool Map::selectUnit(Unit *u)
+{
+  if(currUnit)currUnit->getSceneNode()->showBoundingBox(false);
+  currUnit = u;
+  currUnit->getSceneNode()->showBoundingBox(true);
+}
+
+bool Map::selectUnit(int x, int y)
+{
+  if(currAnim || (currUnit && currUnit->getAnimState()==Unit::WALK))return false;
+  if(x >= 0 && x < maxX && y>= 0 && y < maxY)
+  {
+    if(tiles[x][y].hasUnit() && tiles[x][y].u->isAlive())
+    {
+     selectUnit(tiles[x][y].u);
+     return true;
+   }
+ }
+ return false;
+}
+
+int Map::getMaxX()
+{
+  return maxX;
+}
+int Map::getMaxY()
+{
+  return maxY;
+}
+bool Map::moveUnit(Ogre::SceneManager *sm,Unit *u,int x,int y)
+{
+  std::cerr<<"src "<<u->getX()<<" "<<u->getY()<<" dst "<<x<<" "<<y<<std::endl;
+  if(currAnim || (u->getX() == x && u->getY() == y) || (tiles[x][y].hasUnit() && tiles[x][y].u->isAlive()) || u->getAnimState() == Unit::WALK)return false;
+  
+  currPath = findPath(u->getX(),u->getY(),x,y);
+  if(!currPath)
+  {
+    std::cerr<<"Couldn't find path"<<std::endl;
+    return false;
+  }
+  currPath->pop();
+  currUnit->setAnimState(Unit::WALK);
+  return true;
+
+}
+
+
+class SearchNode{
+public:
+  int x;
+  int y;
+  int goalX;
+  int goalY;
+  int cost;
+  SearchNode *prev;
+  Map *m;
+  SearchNode():x(0),y(0),goalX(0),goalY(0),cost(0),prev(NULL),m(NULL){}
+  SearchNode(int x,int y,int goalX,int goalY,int cost, SearchNode *prev,Map *m):x(x),y(y),goalX(goalX),goalY(goalY),cost(cost),prev(prev),m(m)
+  {}
+  int heuristic() const
+  {
+    return abs(x-goalX+y-goalY);
+  }
+  bool isGoal()
+  {
+    return x==goalX && y==goalY;
+  }
+  std::vector<SearchNode*> successors()
+  {
+    //add has unit logic
+    std::cout<<"finding successors"<<std::endl;
+    std::vector<SearchNode *> v;
+    std::cout<<"potential successors "<<std::endl<<(x-1)<<" "<<y<<" "<<(x+1)<<" "<<y<<" "<<(x)<<" "<<(y-1)<<" "<<(x)<<" "<<(y+1)<<std::endl;
+    if((x-1)>=0)
+    {
+      if(!m->tiles[x-1][y].hasUnit() || (m->tiles[x-1][y].hasUnit() && !m->tiles[x-1][y].u->isAlive()))
+      {
+        SearchNode *n = new SearchNode(x-1,y,goalX,goalY,cost+1,this,m);
+        v.push_back(n);
+      }else
+      {
+       std::cout<<(x-1)<<" "<<y<<" has a unit"<<std::endl;
+     }
+
+   }
+   if((x+1)<m->maxX)
+   {
+    if(!m->tiles[x+1][y].hasUnit() || (m->tiles[x+1][y].hasUnit() && !m->tiles[x+1][y].u->isAlive()))
+    {
+      SearchNode *n = new SearchNode(x+1,y,goalX,goalY,cost+1,this,m);
+      v.push_back(n);
+    }else
+
+    {
+
+     std::cout<<(x+1)<<" "<<y<<" has a unit"<<std::endl;
+   }
+
+ }
+ if((y-1)>=0)
+
+ {
+  if(!m->tiles[x][y-1].hasUnit() || (m->tiles[x][y-1].hasUnit() && !m->tiles[x][y-1].u->isAlive()))
+
+  {
+
+   SearchNode *n = new SearchNode(x,y-1,goalX,goalY,cost+1,this,m);
+   v.push_back(n);
+ }else
+ {
+   std::cout<<(x)<<" "<<(y-1)<<" has a unit"<<std::endl;
+ }
+
+}
+if((y+1)<m->maxY)
+
+{
+  if(!m->tiles[x][y+1].hasUnit() || (m->tiles[x][y+1].hasUnit() && !m->tiles[x][y+1].u->isAlive()))
+  {
+    SearchNode *n = new SearchNode(x,y+1,goalX,goalY,cost+1,this,m);
+    v.push_back(n); 
+  }else
+
+  {
+
+   std::cout<<(x)<<" "<<(y+1)<<" has a unit"<<std::endl;
+ }
+
+}
+std::cout<<"returning finding successors"<<std::endl;
+return v;
+}
+
+bool isIn(std::vector<SearchNode *> &v)
+{
+  for(int i=0; i < v.size(); i++)
+  {
+   if(v[i]->x == x && v[i]->y == y)return true;
+ }
+ return false;
+}
+
+};
+
+struct classcomp : public std::binary_function<SearchNode*,SearchNode*,bool> {
+  bool operator() (const SearchNode * lhs,const SearchNode * rhs) const
+  {return (lhs->cost+lhs->heuristic())>(rhs->cost+rhs->heuristic());}
+};
+/*
+  struct mapcomp {
+  bool operator() (const SearchNode& lhs, const SearchNode& rhs) const
+  {return (lhs.cost+lhs.heuristic())<(rhs.cost+rhs.heuristic());}
+  };
+*/
+
+  std::queue<Ogre::Vector2> * Map::findPath(int srcx,int srcy,int dstx, int dsty)
+  {
+    std::cout<<"starting findpath"<<std::endl;
+    std::priority_queue<SearchNode*,std::vector<SearchNode*>,classcomp> frontier;
+    std::vector<SearchNode *> explored;
+    SearchNode *start = new SearchNode(srcx,srcy,dstx,dsty,0,NULL,this);
+    frontier.push(start);
+    SearchNode *curr = NULL;
+    while(!frontier.empty())
+    {
+
+      curr = frontier.top();
+      frontier.pop();
+      std::cout<<"popped"<<curr->x<<" "<<curr->y<<std::endl;
+      if(curr->isGoal())
+      {
+       std::cout<<"found goal ("<<curr->x<<","<<curr->y<<")"<<std::endl;
+       break;
+     }
+     explored.push_back(curr);
+     std::vector<SearchNode*> next = curr->successors();
+     for(int i=0; i < next.size(); i++)
+     {
+       std::cout<<"is "<<next[i]->x<<" "<<next[i]->y<<" explored"<<std::endl;
+       if(!next[i]->isIn(explored))
+       {
+         std::cout<<"it is not!"<<std::endl;
+         frontier.push(next[i]);
+       }
+     }
+     curr = NULL;
+
+   }
+   std::cout<<"cleaning"<<std::endl;
+  //Cleanup
+   while(!frontier.empty())
+   {
+      //std::cout<<"cleaning frontier"<<std::endl;
+      //stuff still on frontier needs to be deleted
+    SearchNode *tmp = frontier.top();
+    frontier.pop();
+    delete tmp;
+  }
+  std::queue<Ogre::Vector2> *ret = NULL;
+  if(curr != NULL)
+  {
+    ret = new std::queue<Ogre::Vector2>();
+    std::list<SearchNode *> l;
+    l.push_front(curr);
+    SearchNode *ptr = curr->prev;
+    while(ptr != NULL)
+    {
+     l.push_front(ptr);
+     ptr = ptr->prev;
+   }
+   while(l.size()>0)
+   {
+     ptr = l.front();
+     l.pop_front();
+	  //std::cout<<"pushing "<<ptr->x<<" "<<ptr->y<<std::endl;
+     ret->push(Ogre::Vector2(ptr->x,ptr->y));
+
+     delete ptr;
+   }
+ }
+
+ return ret;
+
+}
+
+Ogre::Vector2 Map::worldToMap(const Ogre::Vector3 &v)
+{
+  int x = (v.x/(Ogre::Real)tileW);
+  int y = -(v.z/(Ogre::Real)tileH);
+  return Ogre::Vector2(x,y);
+}
+Ogre::Vector3 lerp (Ogre::Vector3 &srcLocation, Ogre::Vector3 &destLocation, Ogre::Real Time)
+{
+  std::cerr<<srcLocation<<" "<<destLocation<<" "<<Time<<std::endl;
+  return srcLocation + (destLocation - srcLocation) * Time;
+}
+
+void Map::update(Ogre::SceneManager *sm,Ogre::Real time)
+{
+ std::cerr<<"Map update begin"<<std::endl;
+ 
+ if(currPath){
+   std::cerr<<"Path Exists"<<std::endl;
+    // currAnim = sm->getAnimationState(Unit::WALK);
+   
+   Ogre::Vector3 current( mapToWorld(currUnit->getX(),currUnit->getY()));
+   Ogre::Vector3 next;
+   Ogre::Vector3 orig = currUnit->getSceneNode()->_getDerivedOrientation() * currUnit->getInitialDirection();
+   orig.normalise();
+   std::cout<<orig<<std::endl;
+   if(currPath->empty()){
+    std::cerr<<"Path Empty"<<std::endl;
+    delete currPath;
+    std::cerr<<"Deleted current path"<<std::endl;
+    currPath = NULL;
+
+    currUnit->setAnimState(Unit::IDLE);
+    std::cerr<<"Set animstate to idle"<<std::endl;
+  }
+  else{
+    std::cerr<<"Path Not Empty"<<std::endl;
+    next = Ogre::Vector3( mapToWorld((int)currPath->front().x,(int)currPath->front().y));
+    Ogre::Vector3 dir(next - current);
+    dir.normalise();
+    Ogre::Quaternion src = currUnit->getSceneNode()->getOrientation();
+    Ogre::Quaternion dest = orig.getRotationTo(dir) * src;
+
+    animTime+= time;
+    if(animTime >= 1.0){
+     animTime = 0;
+     std::cerr<<next<<std::endl;
+     currUnit->getSceneNode()->setPosition(next);
+     std::cerr<<"set pos"<<std::endl;
+     tiles[currUnit->getX()][currUnit->getY()].u= NULL;
+     Ogre::Vector2 f = currPath->front();
+     tiles[(int)f.x][(int)f.y].u = currUnit;
+     currUnit->setX(currPath->front().x);
+     currUnit->setY(currPath->front().y);
+
+     currPath->pop();
+     std::cout<<"Popped "<<f<<std::endl;
+   }
+   else{
+     std::cerr<<lerp(current,next,animTime)<<std::endl;
+     currUnit->getSceneNode()->setPosition(lerp(current,next,animTime));
+     std::cerr<<"set pos"<<std::endl;
+     currUnit->getSceneNode()->setOrientation(Ogre::Quaternion::Slerp(animTime,src,dest));
+   }	
+
+ }
+
+}
+
+std::cout<<"Start tile updates:"<<std::endl;
+for(int i=0; i < maxX; i++)
+{
+  for(int j=0; j < maxY; j++)
+  {
+   if(tiles[i][j].hasUnit())
+   {
+	      // std::cout<<"has unit "<<i<<" "<<j<<std::endl;  
+     tiles[i][j].u->update(time);
+
+   }
+ }
+ std::cout<<std::endl;
+}
+std::cerr<<"Map update end"<<std::endl;
+
+}
+
+
+bool Map::attackUnit(int x, int y)
+{
+  if(currAnim || !tiles[x][y].hasUnit() || (currUnit->getX() == x && currUnit->getY() == y) || !tiles[x][y].u->isAlive() || !currUnit->inRange(x,y) || currUnit->getAnimState() == Unit::WALK)return false;
+  Ogre::Vector3 srcToDst = currUnit->getSceneNode()->getPosition() - tiles[x][y].u->getSceneNode()->getPosition();
+  srcToDst.normalise();
+  currUnit->setDirection(-srcToDst);
+  //currUnit->updateDirection();
+  tiles[x][y].u->setDirection(srcToDst);
+  //tiles[x][y].u->updateDirection();
+  tiles[x][y].u->attacked(currUnit);
+  currUnit->setAnimState(Unit::ATTACK);
+  return true;
+}
+
+Unit * Map::getSelectedUnit()
+{
+  return currUnit;
+}
+Tiles * Map::getSelectedTile()
+{
+  return currTile;
+}

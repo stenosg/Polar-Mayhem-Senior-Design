@@ -1,0 +1,1 @@
+g++ stats.cpp item.cpp unit.cpp tile.cpp map.cpp player.cpp aiplayer.cpp textrenderer.cpp soundmanager.cpp fishinghole.cpp gamemanager.cpp main.cpp -lOgreMain -lOIS -lCEGUIBase -lCEGUIOgreRenderer -lopenal -lalut

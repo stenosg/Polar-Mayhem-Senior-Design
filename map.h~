@@ -1,0 +1,47 @@
+#ifndef _MAP_H_
+#define _MAP_H_
+#include "unit.h"
+#include "tile.h"
+#include <queue>
+
+class Map
+{
+ private:
+  int maxX;
+  int maxY;
+  int tileW;
+  int tileH;
+  Ogre::Real animTime;
+  Tiles *currTile;
+  Tiles **tiles; //array of tiles,our grid //access tiles using tiles[i][j]
+  std::queue<Ogre::Vector2> *currPath;
+  Ogre::Vector2* start;
+  Ogre::Vector2* end;
+  Unit *currUnit;
+  Ogre::AnimationState*  currAnim;
+
+  friend class SearchNode;
+  
+ public:
+  Map(Ogre::SceneManager *s,std::string mesh,std::string mat,int maxX,int maxY,int tileW,int tileH);
+  ~Map();
+  Ogre::Vector2 worldToMap(const Ogre::Vector3 &v);
+  Ogre::Vector3 mapToWorld(int x, int y);
+  bool moveUnit(Ogre::SceneManager *sm,Unit *u,int x,int y);
+  bool addUnit(Unit *u,int x,int y);
+  bool selectTile(int x,int y);
+  bool selectUnit(Unit *u);
+  bool selectUnit(int x, int y);
+  bool attackUnit(int x, int y);
+  bool moveTile(Ogre::SceneManager *sm);
+  Tiles * getSelectedTile();
+  Unit * getSelectedUnit();
+  std::queue<Ogre::Vector2> *findPath(int srcx,int srcy,int dstx, int dsty); //Vector2 corresponds to x,y index in tiles array
+  void update(Ogre::SceneManager *sm,Ogre::Real time);
+  int getMaxX();
+  int getMaxY();
+
+
+};
+
+#endif
